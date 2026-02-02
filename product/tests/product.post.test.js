@@ -1,5 +1,13 @@
+
+jest.mock('../src/middlewares/auth.middleware', () => {
+  return {
+    createAuthMiddleware: () => (req, res, next) => next(),
+  };
+});
+
+
 const request = require('supertest');
-const app = require('../../app');
+const app = require('../src/app.js');
 
 describe('POST /api/products/', () => {
   it('should create a product with valid data', async () => {
