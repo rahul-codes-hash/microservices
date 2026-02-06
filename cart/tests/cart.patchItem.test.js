@@ -13,7 +13,7 @@ const mockToken = jwt.sign(
 const validProductId = new mongoose.Types.ObjectId().toString()
 const anotherProductId = new mongoose.Types.ObjectId().toString()
 
-describe('POST /api/cart/items', () => {
+describe('PATCH /api/cart/items/:productId', () => {
   beforeEach(async () => {
     // Clear cart collection before each test
     await cartModel.deleteMany({})
@@ -25,37 +25,59 @@ describe('POST /api/cart/items', () => {
   })
 
   describe('Successful operations', () => {
-    test('should add a new item to cart successfully', async () => {
-      const res = await request(app)
-        .post('/cart/items')
-        .set('Cookie', `token=${mockToken}`)
-        .send({
-          productId: validProductId,
-          qty: 2
-        })
-
-      expect(res.status).toBe(200)
-      expect(res.body).toHaveProperty('message', 'Item added to cart successfully')
-      expect(res.body).toHaveProperty('cart')
-      expect(res.body.cart.items).toHaveLength(1)
-      expect(res.body.cart.items[0]).toEqual({
-        productId: validProductId,
-        quantity: 2
-      })
-    })
-
-    test('should add multiple different items to cart', async () => {
-      // Add first item
+    test('should update item quantity successfully', async () => {
+      // First, add an item to cart
       await request(app)
         .post('/cart/items')
         .set('Cookie', `token=${mockToken}`)
         .send({
           productId: validProductId,
-          qty: 1
+          qty: 5
         })
 
-      // Add second item
+      // Update the quantity
       const res = await request(app)
+        .patch(`/cart/items/${validProductId}`)
+        .set('Cookie', `token=${mockToken}`)
+        .send({ qty: 3 })
+
+      expect(res.status).toBe(200)
+      expect(res.body).toHaveProperty('message')
+      expect(res.body).toHaveProperty('cart')
+      expect(res.body.cart.items[0].quantity).toBe(3)
+    })
+
+    test('should remove item when quantity is set to 0', async () => {
+      // Add an item to cart
+      await request(app)
+        .post('/cart/items')
+        .set('Cookie', `token=${mockToken}`)
+        .send({
+          productId: validProductId,
+          qty: 5
+        })
+
+      // Update quantity to 0
+      const res = await request(app)
+        .patch(`/cart/items/${validProductId}`)
+        .set('Cookie', `token=${mockToken}`)
+        .send({ qty: 0 })
+
+      expect(res.status).toBe(200)
+      expect(res.body.cart.items).toHaveLength(0)
+    })
+
+    test('should update quantity of one item without affecting others', async () => {
+      // Add two items to cart
+      await request(app)
+        .post('/cart/items')
+        .set('Cookie', `token=${mockToken}`)
+        .send({
+          productId: validProductId,
+          qty: 5
+        })
+
+      await request(app)
         .post('/cart/items')
         .set('Cookie', `token=${mockToken}`)
         .send({
@@ -63,103 +85,85 @@ describe('POST /api/cart/items', () => {
           qty: 3
         })
 
+      // Update first item quantity
+      const res = await request(app)
+        .patch(`/cart/items/${validProductId}`)
+        .set('Cookie', `token=${mockToken}`)
+        .send({ qty: 2 })
+
       expect(res.status).toBe(200)
       expect(res.body.cart.items).toHaveLength(2)
-      expect(res.body.cart.items[0]).toEqual({
-        productId: validProductId,
-        quantity: 1
-      })
-      expect(res.body.cart.items[1]).toEqual({
-        productId: anotherProductId,
-        quantity: 3
-      })
+      expect(res.body.cart.items[0].quantity).toBe(2)
+      expect(res.body.cart.items[1].quantity).toBe(3)
     })
+  })
 
-    test('should increment quantity when adding same product again', async () => {
-      // Add item first time
+  describe('Validation errors', () => {
+    test('should return 400 when qty is missing', async () => {
+      // Add an item first
       await request(app)
         .post('/cart/items')
         .set('Cookie', `token=${mockToken}`)
         .send({
           productId: validProductId,
-          qty: 2
+          qty: 5
         })
 
-      // Add same item second time
       const res = await request(app)
-        .post('/cart/items')
+        .patch(`/cart/items/${validProductId}`)
         .set('Cookie', `token=${mockToken}`)
-        .send({
-          productId: validProductId,
-          qty: 3
-        })
-
-      expect(res.status).toBe(200)
-      expect(res.body.cart.items).toHaveLength(1)
-      expect(res.body.cart.items[0].quantity).toBe(5)
-    })
-  })
-
-  describe('Validation errors', () => {
-    test('should return 400 when productId is missing', async () => {
-      const res = await request(app)
-        .post('/cart/items')
-        .set('Cookie', `token=${mockToken}`)
-        .send({
-          qty: 2
-        })
-
-      expect(res.status).toBe(400)
-      expect(res.body).toHaveProperty('errors')
-    })
-
-    test('should return 400 when qty is missing', async () => {
-      const res = await request(app)
-        .post('/cart/items')
-        .set('Cookie', `token=${mockToken}`)
-        .send({
-          productId: validProductId
-        })
-
-      expect(res.status).toBe(400)
-      expect(res.body).toHaveProperty('errors')
-    })
-
-    test('should return 400 when productId is invalid ObjectId format', async () => {
-      const res = await request(app)
-        .post('/cart/items')
-        .set('Cookie', `token=${mockToken}`)
-        .send({
-          productId: 'invalid-id',
-          qty: 2
-        })
+        .send({})
 
       expect(res.status).toBe(400)
       expect(res.body).toHaveProperty('errors')
     })
 
     test('should return 400 when qty is not a positive integer', async () => {
-      const res = await request(app)
+      await request(app)
         .post('/cart/items')
         .set('Cookie', `token=${mockToken}`)
         .send({
           productId: validProductId,
-          qty: 0
+          qty: 5
         })
+
+      const res = await request(app)
+        .patch(`/cart/items/${validProductId}`)
+        .set('Cookie', `token=${mockToken}`)
+        .send({ qty: -1 })
 
       expect(res.status).toBe(400)
       expect(res.body).toHaveProperty('errors')
+    })
+
+    test('should return 400 when productId in URL is invalid', async () => {
+      const res = await request(app)
+        .patch('/cart/items/invalid-id')
+        .set('Cookie', `token=${mockToken}`)
+        .send({ qty: 5 })
+
+      expect(res.status).toBe(400)
+    })
+  })
+
+  describe('Not found errors', () => {
+    test('should handle updating non-existent item in cart', async () => {
+      const nonExistentProductId = new mongoose.Types.ObjectId().toString()
+
+      const res = await request(app)
+        .patch(`/cart/items/${nonExistentProductId}`)
+        .set('Cookie', `token=${mockToken}`)
+        .send({ qty: 5 })
+
+      expect(res.status).toBe(404)
     })
   })
 
   describe('Authentication errors', () => {
     test('should return 401 when no token is provided', async () => {
       const res = await request(app)
-        .post('/cart/items')
-        .send({
-          productId: validProductId,
-          qty: 2
-        })
+        .patch(`/cart/items/${validProductId}`)
+        .send({ qty: 3 })
 
       expect(res.status).toBe(401)
       expect(res.body).toHaveProperty('message')
@@ -168,12 +172,9 @@ describe('POST /api/cart/items', () => {
 
     test('should return 401 when invalid token is provided', async () => {
       const res = await request(app)
-        .post('/cart/items')
+        .patch(`/cart/items/${validProductId}`)
         .set('Cookie', 'token=invalid-token')
-        .send({
-          productId: validProductId,
-          qty: 2
-        })
+        .send({ qty: 3 })
 
       expect(res.status).toBe(401)
       expect(res.body).toHaveProperty('message')
