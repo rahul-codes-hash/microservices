@@ -3,12 +3,12 @@ const cookieParser = require('cookie-parser')
 const orderRoutes = require('./routes/order.routes.js')
 
 
+const app = express()
 
 app.use(express.json())
 app.use(cookieParser())
 
 app.use('/api/orders' , orderRoutes)
 
-const app = express()
 
 module.exports = app

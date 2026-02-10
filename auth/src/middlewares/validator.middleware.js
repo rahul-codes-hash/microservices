@@ -96,6 +96,20 @@ const addUserAddressValidations = [
     .notEmpty()
     .withMessage('Country is required')
     ,
+    body('phone')
+    .optional()
+    .isString()
+    .withMessage('Phone must be a string')
+    .bail()
+    .matches(/^\d{10}$/)
+    .withMessage('Phone must be a valid 10-digit number')
+    ,
+    body('isDefault')
+    .optional()
+    .isBoolean()
+    .withMessage('isDefault must be a boolean value')
+    ,
+    respondwithValidationErrors
 ]
 
 module.exports = {

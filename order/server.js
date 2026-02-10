@@ -3,6 +3,7 @@ const connectDB = require('./src/db/db.js')
 
 require('dotenv').config()
 
+
 connectDB()
 
 app.listen(3003 , () => {

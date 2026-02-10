@@ -29,7 +29,11 @@ const productSchema = new mongoose.Schema({
                 thumbnail : String ,
                 id : String
             }
-        ]
+        ] ,
+        stock : {
+            type : Number ,
+            default : 0
+        } 
     })
 
     // Create text index for full-text search

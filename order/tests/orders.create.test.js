@@ -1,4 +1,5 @@
 const request = require('supertest')
+const jwt = require('jsonwebtoken')
 
 // These tests are written against POST /api/orders and are skipped by default.
 // Remove `.skip` on the describe to enable once the API and controllers exist.
@@ -15,6 +16,13 @@ describe.skip('POST /api/orders - Create order from current cart', () => {
     ]
   }
 
+  // Helper: create auth cookie using JWT signed with test env secret
+  function createAuthCookie(userId, role = 'user') {
+    const payload = { id: userId, role }
+    const token = jwt.sign(payload, process.env.JWT_SECRET || 'test-secret', { expiresIn: '1h' })
+    return `token=${token}`
+  }
+
   test('copies priced items into order (price snapshot)', async () => {
     // Arrange: depending on your app, you may need to create products and a cart
     // in the DB before calling the endpoint. This test assumes POST /api/orders
@@ -25,6 +33,7 @@ describe.skip('POST /api/orders - Create order from current cart', () => {
       .post('/api/orders')
       .send(exampleCartPayload)
       .set('Accept', 'application/json')
+      .set('Cookie', createAuthCookie(exampleCartPayload.userId))
 
     // Assert
     expect([201, 200]).toContain(res.status)
@@ -45,6 +54,7 @@ describe.skip('POST /api/orders - Create order from current cart', () => {
       .post('/api/orders')
       .send(exampleCartPayload)
       .set('Accept', 'application/json')
+      .set('Cookie', createAuthCookie(exampleCartPayload.userId))
 
     expect([201, 200]).toContain(res.status)
     expect(res.body).toHaveProperty('status')
@@ -59,6 +69,7 @@ describe.skip('POST /api/orders - Create order from current cart', () => {
       .post('/api/orders')
       .send(exampleCartPayload)
       .set('Accept', 'application/json')
+      .set('Cookie', createAuthCookie(exampleCartPayload.userId))
 
     expect([201, 200]).toContain(res.status)
     expect(res.body).toHaveProperty('totalPrice')
@@ -76,6 +87,7 @@ describe.skip('POST /api/orders - Create order from current cart', () => {
       .post('/api/orders')
       .send(exampleCartPayload)
       .set('Accept', 'application/json')
+      .set('Cookie', createAuthCookie(exampleCartPayload.userId))
 
     expect([201, 200]).toContain(res.status)
 
