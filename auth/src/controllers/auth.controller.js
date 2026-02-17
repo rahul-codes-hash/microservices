@@ -1,8 +1,9 @@
 // src/controllers/auth.controller.js
-const userModel = require('../models/user.model.js');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const redis = require('../db/redis.js');
+const userModel = require('../models/user.model.js')
+const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
+const redis = require('../db/redis.js')
+const { publishToQueue } = require('../broker/broker.js')
 
 function isStrongPassword(password) {
   // Example rules: min 8 chars, 1 uppercase, 1 lowercase, 1 number
@@ -35,6 +36,15 @@ async function registerUser(req, res) {
       fullName: { firstName, lastName },
       role : role || 'user'
     });
+
+      // publish user created event to rabbitmq queue for other microservices to consume and perform their respective tasks like sending welcome email to the user or creating user profile in the profile microservice etc
+      publishToQueue('AUTH_NOTIFICATION.USER_CREATED'
+         , { 
+          id: user._id, 
+          username: user.username,
+          email: user.email ,
+          fullName: user.fullName ,
+        });
 
     const token = jwt.sign(
       {
