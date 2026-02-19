@@ -1,5 +1,7 @@
-const {uploadImage} = require('../services/imagekit.service.js');
-const productModel = require('../models/product.model.js');
+const {uploadImage} = require('../services/imagekit.service.js')
+const productModel = require('../models/product.model.js')
+const mongoose = require('mongoose')
+const { publishToQueue } = require('../broker/broker.js')
 
 async function createProduct(req, res) {
     try {
@@ -29,13 +31,15 @@ async function createProduct(req, res) {
         // Here you would typically save the product to the database
         // For demonstration, we'll just return the product data
 
-        const product = await Product.create({
+        const product = await productModel.create({
             title,
             description,
             prices,
             seller,
             images
-        });
+        })
+
+        await publishToQueue('PRODUCT_SELLER_DASHBOARD.PRODUCT_CREATED', product)
 
         res.status(201).json({
             message: 'Product created successfully',

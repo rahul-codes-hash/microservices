@@ -38,13 +38,15 @@ async function registerUser(req, res) {
     });
 
       // publish user created event to rabbitmq queue for other microservices to consume and perform their respective tasks like sending welcome email to the user or creating user profile in the profile microservice etc
-      publishToQueue('AUTH_NOTIFICATION.USER_CREATED'
-         , { 
+      await Promise.all([
+        publishToQueue('AUTH_NOTIFICATION.USER_CREATED', { 
           id: user._id, 
           username: user.username,
-          email: user.email ,
-          fullName: user.fullName ,
-        });
+          email: user.email,
+          fullName: user.fullName,
+        }),
+        publishToQueue('AUTH_SELLER_DASHBOARD.USER_CREATED', user)
+      ]);
 
     const token = jwt.sign(
       {
