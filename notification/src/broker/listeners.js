@@ -20,6 +20,17 @@ module.exports = async function () {
     await sendEmail(data.email, "Welcome to our service!", "Thank you for registering with us!", emailHTMLTemplate)
 })
 
+subscribeToQueue("PAYMENT_NOTIFICATION.PAYMENT_INITIATED", async (data) => {
+    const emailHTMLTemplate = `
+        <h1>Payment Initiated!</h1>
+        <p>Dear ${data.username},</p>
+        <p>Your payment of ${data.currency} ${data.amount} for the orderId ${data.orderId} has been initiated.</p>
+        <p>We will notify you once the payment is completed.</p>
+        <p>Best regards,<br/>The Team</p>
+    `
+    await sendEmail(data.email, "Payment Initiated!", "Your payment has been initiated. We will notify you once it's completed.", emailHTMLTemplate)
+})
+
 subscribeToQueue("PAYMENT_NOTIFICATION.PAYMENT_COMPLETED", async (data) => {
     const emailHTMLTemplate = `
         <h1>Payment Successful!</h1>
@@ -40,6 +51,19 @@ subscribeToQueue("PAYMENT_NOTIFICATION.PAYMENT_FAILED" , async (data) => {
         <p>Best regards,<br/>The Team</p>
     `
     await sendEmail(data.email, "Payment Failed!", "Your payment has failed. Please try again.", emailHTMLTemplate) 
+})
+
+subscribeToQueue("PRODUCT_NOTIFICATION.PRODUCT_CREATED", async (data) => {
+    const emailHTMLTemplate = `
+        <h1>New Product Available!</h1>
+        <p>Dear ${data.username},</p>
+        <p>Check it out and enjoy exclusive launch offers!</p>
+        <p>Best regards,<br/>The Team</p>
+    `
+    await sendEmail(data.email, "New Product Launched!", "Check out our latest products.", emailHTMLTemplate)       
+
+
+
 })
 
 }

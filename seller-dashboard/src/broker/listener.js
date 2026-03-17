@@ -16,4 +16,22 @@ module.exports = async function () {
 
     })
 
+        subscribeToQueue('ORDER_SELLER_DASHBOARD.ORDER_CREATED' , async (order) => {
+        
+        await orderModel.create(order)
+
+    })
+
+            subscribeToQueue('PAYMENT_SELLER_DASHBOARD.PAYMENT_CREATED' , async (payment) => {
+        
+        await paymentModel.create(payment)
+
+    })
+
+                subscribeToQueue('PAYMENT_SELLER_DASHBOARD.PAYMENT_UPDATE' , async (payment) => {
+        
+        await paymentModel.findOneAndUpdate({orderId: payment.orderId} , payment)
+
+    })
+
 }

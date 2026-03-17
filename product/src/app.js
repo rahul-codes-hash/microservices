@@ -8,6 +8,10 @@ const app = express()
 app.use(cookieParser())
 app.use(express.json())
 
+app.get('/', (req, res) => {
+    res.status(200).json({ message: 'Product Service is running.' })
+})
+
 /* POST /api/products */
 app.use('/api/products' , productRoutes)
 

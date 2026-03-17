@@ -15,7 +15,7 @@ setListeners() // Set up the listeners for the queues
 // Creating a simple route to test if the server is running
 // or create a health check route/endpoint for monitoring purposes
 app.get('/', (req, res) => {
-    res.send('Notification service is up and running')
+    res.status(200).json({ message: 'Notification Service is running.' })
 })
 
 

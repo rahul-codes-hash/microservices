@@ -37,6 +37,16 @@ try {
     }
  })
 
+    await publishToQueue("PAYMENT_SELLER_DASHBOARD.PAYMENT_CREATED" , payment )
+
+    await publishToQueue('PAYMENT_NOTIFICATION.PAYMENT_INITIATED' , {
+    email: req.user.email ,
+    orderId: orderId ,
+    amount: price.amount / 100 ,
+    currency: price.currency ,
+    username: req.user.username
+})
+
  return res.status(201).json({
     message: 'Payment initialized successfully' , payment })
 
@@ -83,6 +93,8 @@ async function verifyPayment(req, res) {
                 currency: payment.price.currency ,
                 fullname: req.user.fullname
             })
+
+            await publishToQueue("PAYMENT_SELLER_DASHBOARD.PAYMENT_UPDATED" , payment )
 
             res.status(200).json({message: 'Payment verified successfully' , payment })
 

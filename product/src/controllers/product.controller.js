@@ -41,6 +41,12 @@ async function createProduct(req, res) {
 
         await publishToQueue('PRODUCT_SELLER_DASHBOARD.PRODUCT_CREATED', product)
 
+        await publishToQueue('PRODUCT_NOTIFICATION.PRODUCT_CREATED', {
+            email: req.user.email,
+            productId: product._id,
+            sellerId: seller
+        })
+
         res.status(201).json({
             message: 'Product created successfully',
             product
